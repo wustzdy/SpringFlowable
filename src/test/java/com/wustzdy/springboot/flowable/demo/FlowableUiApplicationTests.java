@@ -1,4 +1,4 @@
-package com.lemon.flowableui;
+package com.wustzdy.springboot.flowable.demo;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

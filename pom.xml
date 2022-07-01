@@ -8,10 +8,10 @@
         <version>2.4.0</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com.Lemon</groupId>
-    <artifactId>flowable-ui</artifactId>
+    <groupId>com.wustzdy.springboot.flowable.demo</groupId>
+    <artifactId>springboot-flowable-ui</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>flowable-ui</name>
+    <name>springboot-flowable-ui</name>
     <description>Demo project for Spring Boot</description>
 
     <properties>

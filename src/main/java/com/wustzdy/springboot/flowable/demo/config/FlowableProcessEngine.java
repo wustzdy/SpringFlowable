@@ -1,4 +1,4 @@
-package com.lemon.flowableui.config;
+package com.wustzdy.springboot.flowable.demo.config;
 
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.flowable.spring.SpringProcessEngineConfiguration;
