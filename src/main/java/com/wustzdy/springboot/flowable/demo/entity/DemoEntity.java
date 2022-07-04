@@ -1,17 +1,25 @@
 package com.wustzdy.springboot.flowable.demo.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.ToString;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
+
 @Data
 @Accessors(chain = true)
 @ToString(callSuper = true)
 @TableName(DemoEntity.TABLE_NAME)
-public class DemoEntity {
+public class DemoEntity implements Serializable {
+    private static final long serialVersionUID = 1L;
     public static final String TABLE_NAME = "demo";
+
+    @TableId(type = IdType.ASSIGN_ID)
+    private Integer id;
 
     @TableField(value = "question_type")
     private String questionType;
