@@ -22,7 +22,6 @@ public class BusinessTemplateService {
         businessTemplateEntity.setTemplateName(model.getTemplateName());
         businessTemplateEntity.setTemplateType(model.getTemplateType());
         businessTemplateEntity.setBusinessType(model.getBusinessType());
-        businessTemplateEntity.setId(1);
         try {
             System.out.println("businessTemplateEntity: " + businessTemplateEntity.toString());
             mapper.insert(businessTemplateEntity);

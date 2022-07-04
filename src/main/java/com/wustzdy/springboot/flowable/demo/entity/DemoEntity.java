@@ -19,7 +19,7 @@ public class DemoEntity implements Serializable {
     public static final String TABLE_NAME = "demo";
 
     @TableId(type = IdType.ASSIGN_ID)
-    private Integer id;
+    private Long id;
 
     @TableField(value = "question_type")
     private String questionType;
