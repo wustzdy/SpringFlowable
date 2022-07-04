@@ -29,6 +29,7 @@ public class DemoService {
 
         Demo resDemo = new Demo();
         BeanUtils.copyProperties(demoEntity, resDemo);
+        resDemo.setId(demoEntity.getId());
         return resDemo;
     }
 
