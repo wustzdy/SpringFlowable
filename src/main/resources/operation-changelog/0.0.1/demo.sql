@@ -1,7 +1,7 @@
 --liquibase formatted sql
 
 --changeset zhudayang:20220118-01
-CREATE TABLE `salesorder_after_sale_service_order` (
+CREATE TABLE `demo` (
 
     `id`                  bigint(20) unsigned NOT NULL COMMENT '分布式主id',
     `tenant_id`           bigint(20) unsigned NOT NULL COMMENT '所属租户id',

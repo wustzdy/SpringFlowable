@@ -9,9 +9,9 @@ import lombok.experimental.Accessors;
 @Data
 @Accessors(chain = true)
 @ToString(callSuper = true)
-@TableName(AfterSaleServiceOrderEntity.TABLE_NAME)
-public class AfterSaleServiceOrderEntity {
-    public static final String TABLE_NAME = "salesorder_after_sale_service_order";
+@TableName(DemoEntity.TABLE_NAME)
+public class DemoEntity {
+    public static final String TABLE_NAME = "demo";
 
     @TableField(value = "question_type")
     private String questionType;
