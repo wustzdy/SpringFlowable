@@ -2,6 +2,7 @@ package com.wustzdy.springboot.flowable.demo.controller;
 
 import com.google.common.collect.Lists;
 import com.wustzdy.springboot.flowable.demo.vo.ActivityVo;
+import com.wustzdy.springboot.flowable.demo.vo.ProcdefineVo;
 import liquibase.pro.packaged.U;
 import org.apache.commons.collections.CollectionUtils;
 import org.flowable.bpmn.model.BpmnModel;
@@ -12,6 +13,7 @@ import org.flowable.bpmn.model.UserTask;
 import org.flowable.engine.RepositoryService;
 import org.flowable.engine.repository.Deployment;
 import org.flowable.engine.repository.ModelQuery;
+import org.flowable.engine.repository.ProcessDefinition;
 import org.flowable.ui.common.model.UserRepresentation;
 import org.flowable.ui.common.rest.idm.CurrentUserProvider;
 import org.flowable.ui.modeler.domain.Model;
@@ -109,5 +111,17 @@ public class MyRemoteAccountController {
         return jobList;
     }
 
+    //流程定义-列表 s-flow/procdef/procdefList
+    @GetMapping("/procdef/procdefList")
+    public List<ProcdefineVo> getProcdefList() {
 
+        List<ProcessDefinition> processDefinitions = repositoryService.createProcessDefinitionQuery()
+                .list();
+        List<ProcdefineVo> list = new ArrayList<>();
+        for (ProcessDefinition procdefEntity : processDefinitions) {
+
+            list.add(new ProcdefineVo(procdefEntity));
+        }
+        return list;
+    }
 }
