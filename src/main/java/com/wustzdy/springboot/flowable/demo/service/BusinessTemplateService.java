@@ -11,6 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 public class BusinessTemplateService {
     @Autowired
@@ -32,5 +35,12 @@ public class BusinessTemplateService {
         BusinessTemplateModel resDemo = new BusinessTemplateModel();
         BeanUtils.copyProperties(businessTemplateEntity, resDemo);
         return resDemo;
+    }
+
+    public List<BusinessTemplateEntity> list() {
+        List<BusinessTemplateEntity> list = mapper.selectList(null);
+
+        return list;
+
     }
 }
