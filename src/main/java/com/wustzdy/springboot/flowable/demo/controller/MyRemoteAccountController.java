@@ -1,18 +1,21 @@
 package com.wustzdy.springboot.flowable.demo.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.wustzdy.springboot.flowable.demo.vo.ActivityVo;
 import com.wustzdy.springboot.flowable.demo.vo.ProcdefineVo;
-import liquibase.pro.packaged.U;
-import org.apache.commons.collections.CollectionUtils;
+
+import org.flowable.bpmn.converter.BpmnXMLConverter;
 import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.bpmn.model.FlowElement;
 import org.flowable.bpmn.model.Process;
-import org.flowable.bpmn.model.SubProcess;
 import org.flowable.bpmn.model.UserTask;
+import org.flowable.editor.language.json.converter.BpmnJsonConverter;
 import org.flowable.engine.RepositoryService;
 import org.flowable.engine.repository.Deployment;
 import org.flowable.engine.repository.ModelQuery;
+import org.flowable.engine.repository.NativeModelQuery;
 import org.flowable.engine.repository.ProcessDefinition;
 import org.flowable.ui.common.model.UserRepresentation;
 import org.flowable.ui.common.rest.idm.CurrentUserProvider;
@@ -23,9 +26,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -37,6 +39,8 @@ public class MyRemoteAccountController {
     @Autowired
     private RepositoryService repositoryService;
     protected final Collection<CurrentUserProvider> currentUserProviders;
+    private Integer limit;
+    private Integer page;
 
     public MyRemoteAccountController(ObjectProvider<CurrentUserProvider> currentUserProviders) {
         this.currentUserProviders = currentUserProviders.orderedStream().collect(Collectors.toList());
@@ -68,18 +72,42 @@ public class MyRemoteAccountController {
     }
 
     //获取流程模型分页数据
-    @GetMapping("/process/list")
-    public List<org.flowable.engine.repository.Model> getList() {
-        int limit = 10;
-        int page = 1;
-      /*  List<org.flowable.engine.repository.Model> models = repositoryService.createModelQuery().orderByCreateTime().desc().listPage(limit * (page - 1)
-                , limit);*/
-        ModelQuery modelQuery = repositoryService.createModelQuery();
-        return null;
+    @GetMapping("/models")
+    public List<org.flowable.engine.repository.Model> getModels(Integer limit, Integer page) {
+        limit = 10;
+        page = 1;
+        List<org.flowable.engine.repository.Model> list = repositoryService.createModelQuery().orderByCreateTime().desc().listPage(limit * (page - 1)
+                , limit);
+
+        List<org.flowable.engine.repository.Model> list1 = repositoryService.createModelQuery().list();
+//        modelService.get
+
+        return list;
 
     }
 
+
     //已发布流程列表
+    @GetMapping("/procdef")
+    public List<ProcdefineVo> getList(Integer limit, Integer page) {
+        limit = 10;
+        page = 1;
+        List<ProcessDefinition> processDefinitions = repositoryService.createProcessDefinitionQuery()
+                .listPage(limit * (page - 1), limit);
+        int count = (int) repositoryService.createProcessDefinitionQuery().count();
+
+        List<ProcdefineVo> list = new ArrayList<>();
+        for (ProcessDefinition procdefEntity : processDefinitions) {
+            ProcdefineVo procdefineVo = new ProcdefineVo(procdefEntity);
+            Deployment deployment = repositoryService.createDeploymentQuery()
+                    .deploymentId(procdefEntity.getDeploymentId())
+                    .singleResult();
+            procdefineVo.setDeploymentTime(deployment.getDeploymentTime());
+            list.add(procdefineVo);
+        }
+        list.sort(Comparator.comparing(ProcdefineVo::getDeploymentTime).reversed());
+        return list;
+    }
 
     //流程模版-新增
 

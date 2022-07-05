@@ -8,4 +8,5 @@
 
     <include file="operation-changelog/0.0.1/demo.sql"/>
     <include file="operation-changelog/0.0.1/business_template.sql"/>
+    <include file="operation-changelog/0.0.1/business_assign.sql"/>
 </databaseChangeLog>
