@@ -332,17 +332,6 @@ public class HandlerTaskSvcImpl implements IHandlerTaskSvc {
         return newAssigneeList;
     }
 
-
-    /**
-     * 自己取回流程
-     */
-    @Override
-    public void doCallBackTask(String taskId) {
-
-        //取回工单
-        iActivitiUtilSvc.callBackProcess(taskId);
-    }
-
     /**
      * 关闭工单
      */
@@ -570,11 +559,6 @@ public class HandlerTaskSvcImpl implements IHandlerTaskSvc {
     @Override
     public byte[] findDiagramImageForAcivitiFlowsActiviti(String deploymentId, String imageType) {
         return iActivitiUtilSvc.getDiagramImageByDeploymentId(deploymentId, imageType);
-    }
-
-    @Override
-    public InputStream getFlowImageByKey(String flowKey) {
-        return iActivitiUtilSvc.getFlowImageByKey(flowKey);
     }
 
     @Override

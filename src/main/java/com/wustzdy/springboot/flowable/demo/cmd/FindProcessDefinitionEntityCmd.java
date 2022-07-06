@@ -8,9 +8,7 @@ import org.flowable.engine.impl.persistence.entity.ProcessDefinitionEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * @author xielianjun
- */
+
 public class FindProcessDefinitionEntityCmd implements Command<ProcessDefinitionEntity> {
     private static Logger logger = LoggerFactory.getLogger(FindProcessDefinitionEntityCmd.class);
     private String processDefinitionId;

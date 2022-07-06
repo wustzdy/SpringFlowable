@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.StrUtil;
 import com.wustzdy.springboot.flowable.demo.constant.FlowConstants;
+import com.wustzdy.springboot.flowable.demo.dao.PimOrderDao;
 import com.wustzdy.springboot.flowable.demo.entity.PimOrderEntity;
 import com.wustzdy.springboot.flowable.demo.service.ActTaskService;
 import com.wustzdy.springboot.flowable.demo.service.BusinessFlowsProxyInstanceService;
@@ -40,6 +41,7 @@ import java.beans.Expression;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("all")
 @Slf4j
 @Transactional(rollbackFor = Exception.class)
 @Service("actTaskService")
@@ -214,7 +216,7 @@ public class ActTaskServiceImpl implements ActTaskService {
      * 跳转（包括回退和向前）至指定活动节点
      */
     public void jumpTask(String currentTaskId, String targetTaskDefinitionKey, Map<String, Object> variables) {
-        jumpTask(getTaskEntity(currentTaskId), targetTaskDefinitionKey, variables);
+//        jumpTask(getTaskEntity(currentTaskId), targetTaskDefinitionKey, variables);
     }
 
     /**
@@ -223,23 +225,23 @@ public class ActTaskServiceImpl implements ActTaskService {
      * @param targetTaskDefinitionKey 目标任务节点（在模型定义里面的节点名称）
      * @throws Exception
      */
-    public void jumpTask(TaskEntity currentTaskEntity, String targetTaskDefinitionKey, Map<String, Object> variables) {
+   /* public void jumpTask(TaskEntity currentTaskEntity, String targetTaskDefinitionKey, Map<String, Object> variables) {
         ActivityImpl activity = ProcessDefUtils.getActivity(processEngine, currentTaskEntity.getProcessDefinitionId(),
                 targetTaskDefinitionKey);
         jumpTask(currentTaskEntity, activity, variables);
-    }
+    }*/
 
     /**
      * 跳转（包括回退和向前）至指定活动节点
+     *
      * @param currentTaskEntity 当前任务节点
-     * @param targetActivity 目标任务节点（在模型定义里面的节点名称）
+     * @param targetActivity    目标任务节点（在模型定义里面的节点名称）
      * @throws Exception
      */
-    private void jumpTask(TaskEntity currentTaskEntity, ActivityImpl targetActivity, Map<String, Object> variables) {
+    /*private void jumpTask(TaskEntity currentTaskEntity, ActivityImpl targetActivity, Map<String, Object> variables) {
         CommandExecutor commandExecutor = ((RuntimeServiceImpl) runtimeService).getCommandExecutor();
         commandExecutor.execute(new JumpTaskCmd(currentTaskEntity, targetActivity, variables));
-    }
-
+    }*/
     @Override
     public ResultVo doPassMpTask(String taskId, String comment, String operation, String userName) {
         ResultVo resultVo = new ResultVo();
@@ -328,6 +330,7 @@ public class ActTaskServiceImpl implements ActTaskService {
     public Task getTask(String taskId) {
         return taskService.createTaskQuery().taskId(taskId).singleResult();
     }
+
     @Override
     public List<Task> getTasks(String processInstanceId) {
         return taskService.createTaskQuery().processInstanceId(processInstanceId).list();
@@ -366,13 +369,10 @@ public class ActTaskServiceImpl implements ActTaskService {
         return taskVos;
     }
 
-
-
-
     @Override
     public R urgeByProcInsId(String processInstanceId, String username) {
         PimOrderEntity entity = pimOrderDao.getByProcessInstanceId(processInstanceId);
-        if (!Optional.ofNullable(entity).isPresent()){
+        if (!Optional.ofNullable(entity).isPresent()) {
             return R.error("无此工单");
         }
 
@@ -441,370 +441,6 @@ public class ActTaskServiceImpl implements ActTaskService {
             commentVo.setTaskDefinitionKey(taskInstance.getTaskDefinitionKey());
             return commentVo;
         }).collect(Collectors.toList());
-    }
-
-    @Override
-    public R historicFlowList(String procInsId){
-
-        List<Comment> comments = taskService.getProcessInstanceComments(procInsId);
-        System.out.println("comments size " + comments.size());
-        List<CommentVo> commentVoList = getCommentVos(comments);
-
-        // 代理审批
-        for (CommentVo commentVo: commentVoList) {
-            String newCommentUser = proxyInstanceService.getProxyApprover(commentVo.getCommentUser(), commentVo.getTaskId(), commentVo.getCommentId());
-            if (Strings.isNotBlank(newCommentUser)) {
-                commentVo.setCommentUser(newCommentUser);
-            }
-        }
-
-        List<Task> tasks = getTasks(procInsId);
-        List<TaskVo> taskVos = currentTasks(tasks, false);
-
-
-        HistoricProcessInstance historicProcessInstance = historyService.createHistoricProcessInstanceQuery()
-                .processInstanceId(procInsId)
-                .singleResult();
-        if (historicProcessInstance == null) {
-            return R.error("not found: " + procInsId);
-        }
-        //执行实例
-        String processDefinitionId = historicProcessInstance.getProcessDefinitionId();
-
-        //获得当前任务的所有节点
-        ProcessDefinitionEntity def = (ProcessDefinitionEntity) ((RepositoryServiceImpl) repositoryService).getDeployedProcessDefinition(processDefinitionId);
-        //rs是指RepositoryService的实例
-        List<ActivityImpl> activitiList = def.getActivities();
-        Map<String, ActivityImpl> activityMap = activitiList.stream().collect(Collectors.toMap(ActivityImpl::getId, ActivityImpl->ActivityImpl));
-
-        List<String> currentActIds = taskVos.stream().map(TaskVo::getActivityId).distinct().collect(Collectors.toList());
-
-//		Map<String, Comment> commentMap = comments.stream().collect(Collectors.toMap(Comment::getId, Comment->Comment));
-
-        // multi instance parallel merge to current parallel tasks, including those transferred task
-        List<TaskCommentVo> mergeCompletedTask = new ArrayList<>();
-        for (String actId : currentActIds) {
-            if ("end".equals(actId)) {
-                continue;
-            }
-            ActivityImpl activity = activityMap.get(actId);
-            assert activity != null : "Act not found";
-            Map<String, Object> properties = activity.getProperties();
-            String multiInstance = (String) properties.get("multiInstance");
-            if ("parallel".equals(multiInstance)) {
-                Iterator<CommentVo> it = commentVoList.iterator();
-                while (it.hasNext()) {
-                    CommentVo commentVo = it.next();
-                    if (actId.equals(commentVo.getTaskDefinitionKey())) {
-                        HistoricTaskInstance historicTaskInstance = historyService.createHistoricTaskInstanceQuery()
-                                .taskId(commentVo.getTaskId())
-                                .singleResult();
-                        assert historicTaskInstance != null : "historic task not found:" + commentVo.getTaskId();
-                        TaskCommentVo taskVo = new TaskCommentVo();
-                        taskVo.setTaskId(commentVo.getTaskId());
-                        taskVo.setActivityId(commentVo.getTaskDefinitionKey());
-                        taskVo.setAssignee(commentVo.getCommentUser());
-                        taskVo.setName(commentVo.getTaskName());
-                        taskVo.setCreateTime(historicTaskInstance.getCreateTime());
-                        taskVo.setEndTime(commentVo.getCommentTime());
-                        String deleteReason = historicTaskInstance.getDeleteReason();
-                        if (StringUtils.isBlank(deleteReason)) {
-                            deleteReason = "current";
-                        } else if (deleteReason.equals("STOP")) {
-                            deleteReason = "stop";
-                        }
-                        taskVo.setDeleteReason(deleteReason);
-                        taskVo.setTaskDefinitionKey(actId);
-
-                        //
-                        taskVo.setCommentId(commentVo.getCommentId());
-                        taskVo.setCommentUser(commentVo.getCommentUser());
-                        taskVo.setCommentContent(commentVo.getCommentContent());
-                        taskVo.setCommentTime(commentVo.getCommentTime());
-                        taskVo.setTaskName(commentVo.getTaskName());
-
-                        mergeCompletedTask.add(taskVo);
-                        it.remove();
-                    }
-                }
-            }
-        }
-
-        mergeCompletedTask.sort((o1, o2) -> o1.getEndTime().after(o2.getEndTime()) ? 1 : -1);
-
-        List<TaskCommentVo> taskCompleted = new ArrayList<>();
-        for (CommentVo commentVo : commentVoList) {
-            HistoricTaskInstance historicTaskInstance = historyService.createHistoricTaskInstanceQuery()
-                    .taskId(commentVo.getTaskId())
-                    .singleResult();
-            TaskCommentVo taskVo = new TaskCommentVo();
-            taskVo.setTaskId(commentVo.getTaskId());
-            taskVo.setActivityId(commentVo.getTaskDefinitionKey());
-            taskVo.setAssignee(commentVo.getCommentUser());
-            taskVo.setName(commentVo.getTaskName());
-            taskVo.setCreateTime(historicTaskInstance.getCreateTime());
-            taskVo.setEndTime(commentVo.getCommentTime());
-            if (historicTaskInstance != null) {
-                String deleteReason = historicTaskInstance.getDeleteReason();
-                if (StringUtils.isBlank(deleteReason)) {
-                    deleteReason = "current";
-                } else if (deleteReason.equals("STOP")) {
-                    deleteReason = "stop";
-                }
-                taskVo.setDeleteReason(deleteReason);
-            }
-            taskVo.setTaskDefinitionKey(commentVo.getTaskDefinitionKey());
-
-            //
-            taskVo.setCommentId(commentVo.getCommentId());
-            taskVo.setCommentUser(commentVo.getCommentUser());
-            taskVo.setCommentContent(commentVo.getCommentContent());
-            taskVo.setCommentTime(commentVo.getCommentTime());
-            taskVo.setTaskName(commentVo.getTaskName());
-
-            taskCompleted.add(taskVo);
-        }
-
-        // TODO common parallel gateway , merge parallel branch tasks already completed
-
-        FlowHistoryVo flowHistoryVo = new FlowHistoryVo();
-        flowHistoryVo.setCompleted(taskCompleted);
-        flowHistoryVo.setCompletedMP(mergeCompletedTask);
-        flowHistoryVo.setCurrent(taskVos);
-
-        return R.ok(flowHistoryVo);
-    }
-
-    @Override
-    public TraceProcessVo traceProcessNew(String processInstanceId) throws Exception {
-
-        List<HistoricTaskInstance> listHisTask = historyService.createHistoricTaskInstanceQuery()
-                .processInstanceId(processInstanceId)
-                .list();
-
-        Map<String, List<Map<String, Object>>> hisTasks = new HashMap<>();
-        for (HistoricTaskInstance historicTaskInstance : listHisTask) {
-
-            Map<String, Object> activityInfo = new HashMap<>();
-            String deleteReason = historicTaskInstance.getDeleteReason();
-            if (StringUtils.isBlank(deleteReason)) {
-                deleteReason = "current";
-            } else if (deleteReason.equals("STOP")) {
-                deleteReason = "stop";
-            }
-            String taskId = historicTaskInstance.getId();
-            activityInfo.put("taskId", taskId);
-            activityInfo.put("status", deleteReason);
-            activityInfo.put("startTime", historicTaskInstance.getStartTime());
-            activityInfo.put("hisTask", true);
-
-            String assignee = historicTaskInstance.getAssignee();
-            if (deleteReason.equals("current") && StringUtils.isBlank(assignee)) {
-                List<IdentityLink> identityLinks = taskService.getIdentityLinksForTask(taskId);
-                activityInfo.put("assignee", identityLinks.stream().map(IdentityLink::getUserId).collect(Collectors.joining(",")));
-            } else {
-                activityInfo.put("assignee", assignee);
-            }
-            String taskDefinitionKey = historicTaskInstance.getTaskDefinitionKey();
-            if (hisTasks.get(taskDefinitionKey) == null) {
-                List<Map<String, Object>> tasks = new ArrayList<>();
-                tasks.add(activityInfo);
-                hisTasks.put(taskDefinitionKey, tasks);
-            } else {
-                hisTasks.get(taskDefinitionKey).add(activityInfo);
-            }
-        }
-
-        String activityId = null;
-        Execution execution = runtimeService.createExecutionQuery().executionId(processInstanceId).singleResult();//执行实例
-        if (execution != null) {
-            activityId = execution.getActivityId();
-            if (activityId == null) {
-                log.info("the execution is not a leaf execution");
-            }
-        }
-
-//		ProcessInstance processInstance = runtimeService.createProcessInstanceQuery().processInstanceId(processInstanceId)
-//				.singleResult();
-//		ProcessDefinitionEntity processDefinition = (ProcessDefinitionEntity) ((RepositoryServiceImpl) repositoryService)
-
-
-//				.getDeployedProcessDefinition(processInstance.getProcessDefinitionId());
-
-        HistoricProcessInstance historicProcessInstance = historyService.createHistoricProcessInstanceQuery()
-                .processInstanceId(processInstanceId)
-                .singleResult();
-        //执行实例
-        String processDefinitionId = historicProcessInstance.getProcessDefinitionId();
-
-        //获得当前任务的所有节点
-        ProcessDefinitionEntity def = (ProcessDefinitionEntity) ((RepositoryServiceImpl) repositoryService).getDeployedProcessDefinition(processDefinitionId);
-
-
-        List<ActivityImpl> activitiList = def.getActivities();//获得当前任务的所有节点
-
-        List<Map<String, Object>> activityInfos = new ArrayList<Map<String, Object>>();
-        Map<String, List<Map<String, Object>>> taskDefKeyMap = new HashMap<>();
-
-
-        ActivityImpl activityStartEvent = null;
-        for (ActivityImpl activity : activitiList) {
-
-            Map<String, Object> properties = activity.getProperties();
-            String type = (String)properties.get("type");
-
-            // 不传网关到前端，以免前端出错
-            if ("exclusiveGateway".equals(type)) {
-                continue;
-            }
-
-            boolean currentActiviti = false;
-            String id = activity.getId();
-
-            // 当前节点
-            if (id.equals(activityId)) {
-                currentActiviti = true;
-            }
-
-            List<Map<String, Object>> activityImageInfoList = packageSingleActivitiInfoNew(activity, currentActiviti, hisTasks);
-            taskDefKeyMap.put(id, activityImageInfoList);
-
-            for (Map<String, Object> activityImageInfo : activityImageInfoList) {
-                activityInfos.add(activityImageInfo);
-            }
-
-            if ("startEvent".equals(type)) {
-                activityStartEvent = activity;
-            }
-        }
-
-        activityInfos.sort((o1, o2) -> {
-            Integer x1 = (Integer) (o1.get("x"));
-            Integer x2 = (Integer) (o2.get("x"));
-            return x1 - x2;
-        });
-
-        Assert.notNull(activityStartEvent, "没有开始事件");
-
-        Map<String, List<String>> flowMap = new HashMap<>();
-        collectFlow(activityStartEvent, flowMap);
-
-        TraceProcessVo traceProcessVo = new TraceProcessVo();
-        traceProcessVo.setStartId(activityStartEvent.getId());
-        traceProcessVo.setFlowMap(flowMap);
-        traceProcessVo.setTaskDefKeyMap(taskDefKeyMap);
-        traceProcessVo.setActivityInfos(activityInfos);
-        return traceProcessVo;
-
-
-
-//		activityStartEvent.getOutgoingTransitions()
-
-//		return activityInfos;
-    }
-
-    private List<Map<String, Object>> packageSingleActivitiInfoNew(ActivityImpl activity,
-                                                                   boolean currentActiviti, Map<String, List<Map<String, Object>>> hisTasks) throws Exception {
-
-        String activityId = activity.getId();
-        List<Map<String, Object>> sameActTasks = hisTasks.get(activityId);
-        List<Map<String, Object>> resultTasks;
-        if (sameActTasks != null) {
-            resultTasks = sameActTasks;
-        } else {
-            resultTasks = new ArrayList<>();
-            resultTasks.add(new HashMap<>());
-        }
-
-        ActivityBehavior activityBehavior = activity.getActivityBehavior();
-        log.debug("activityBehavior={}", activityBehavior);
-
-        for (Map<String, Object> activityInfo : resultTasks) {
-            activityInfo.put("currentActiviti", currentActiviti);
-            setPosition(activity, activityInfo);
-            setWidthAndHeight(activity, activityInfo);
-            Map<String, Object> properties = activity.getProperties();
-            activityInfo.put("actName", properties.get("name"));
-            activityInfo.put("type", properties.get("type"));
-
-            activityInfo.put("actDoc", properties.get("documentation"));
-            String description = activity.getProcessDefinition().getDescription();
-            activityInfo.put("actDescription", description);
-
-
-            if (activityBehavior instanceof UserTaskActivityBehavior) {
-
-                // 当前任务的分配角色
-                UserTaskActivityBehavior userTaskActivityBehavior = (UserTaskActivityBehavior) activityBehavior;
-                TaskDefinition taskDefinition = userTaskActivityBehavior.getTaskDefinition();
-
-                Set<Expression> candidateGroupIdExpressions = taskDefinition.getCandidateGroupIdExpressions();
-                if (!candidateGroupIdExpressions.isEmpty()) {
-                    // 任务的处理角色
-                    setTaskGroup(activityInfo, candidateGroupIdExpressions);
-                }
-            }
-
-            if (activityBehavior instanceof ParallelMultiInstanceBehavior) {
-                activityInfo.put("behavior", "ParallelMultiInstance");
-            } else if (activityBehavior instanceof SequentialMultiInstanceBehavior) {
-                activityInfo.put("behavior", "SequentialMultiInstance");
-            }
-        }
-
-        return resultTasks;
-    }
-
-    private void setWidthAndHeight(ActivityImpl activity, Map<String, Object> activityInfo) {
-        activityInfo.put("width", activity.getWidth());
-        activityInfo.put("height", activity.getHeight());
-    }
-
-    private void setPosition(ActivityImpl activity, Map<String, Object> activityInfo) {
-        activityInfo.put("x", activity.getX());
-        activityInfo.put("y", activity.getY());
-    }
-
-    private void collectFlow(ActivityImpl activity, Map<String, List<String>> flowMap) {
-        String id = activity.getId();
-        List<PvmTransition> outTransitions = activity.getOutgoingTransitions();
-        collectFlow(id, outTransitions, flowMap);
-    }
-
-    private void collectFlow(String activityId, List<PvmTransition> outTransitions, Map<String, List<String>> flowMap) {
-        if (CollectionUtil.isEmpty(outTransitions)) {
-            return;
-        }
-        for (PvmTransition tr : outTransitions) {
-            PvmActivity ac = tr.getDestination();
-//			String type = ac.getProperty("type").toString();
-            List<PvmTransition> outTransitionsTemp = ac.getOutgoingTransitions();
-
-            if (flowMap.get(activityId) == null) {
-                List<String> acids = new ArrayList<>();
-                acids.add(ac.getId());
-                flowMap.put(activityId, acids);
-            } else {
-                flowMap.get(activityId).add(ac.getId());
-            }
-            collectFlow(ac.getId(), outTransitionsTemp, flowMap);
-
-        }
-    }
-
-    /**
-     * 设置任务组
-     * @param vars
-     * @param candidateGroupIdExpressions
-     */
-    private void setTaskGroup(Map<String, Object> vars, Set<Expression> candidateGroupIdExpressions) {
-        String roles = "";
-        for (Expression expression : candidateGroupIdExpressions) {
-            String expressionText = expression.getExpressionText();
-            String roleName = expressionText;
-            roles += roleName;
-        }
-        vars.put("actTaskRoles", roles);
     }
 
 }

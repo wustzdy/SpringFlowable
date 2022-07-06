@@ -51,8 +51,6 @@ public interface IActivitiUtilSvc {
 
     void resumeProcess(String procInstanceId);
 
-    void callBackProcess(String historyTaskId);
-
     List<ActivityVo> allActivityIds(String processDefinitionKey);
 
     List<ActivityVo> allActivityIdsById(String processDefinitionId);
@@ -81,8 +79,6 @@ public interface IActivitiUtilSvc {
 
     ProcessInstance findProcessInstanceByTaskId(String taskId);
 
-    ActivityImpl findActivitiImpl(String taskId, String activityId);
-
     String getActivityIdByTaskId(String taskId);
 
     String getActivityIdByProcessInstanceId(String processInstanceId);
@@ -90,8 +86,6 @@ public interface IActivitiUtilSvc {
     List<ActivityVo> getHistoryTaskId(String procInstanceId);
 
     ProcessDefinition deployProcess(MultipartFile flowFile);
-
-    InputStream getFlowImageByKey(String flowKey);
 
     Comment addComment(String taskId, String processInstanceId, String comment);
 

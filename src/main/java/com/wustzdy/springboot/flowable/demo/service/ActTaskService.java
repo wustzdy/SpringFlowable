@@ -30,11 +30,7 @@ public interface ActTaskService {
 
     R currentTasksByProcInsId(String processInstanceId);
 
-    R historicFlowList(String procInsId);
-
     List<TaskVo> currentTasks(List<Task> tasks, boolean isNeedEndVo);
-
-    TraceProcessVo traceProcessNew(String processInstanceId) throws Exception;
 
     List<String> currentTasksAssigneOrCandidates(String processInstanceId);
 

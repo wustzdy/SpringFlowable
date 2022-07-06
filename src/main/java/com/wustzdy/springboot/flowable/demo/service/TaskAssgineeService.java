@@ -59,7 +59,8 @@ public class TaskAssgineeService {
             log.info("---entityList--:{}", entityList);
 
             if (entityList == null && operType.equals(FlowConstants.FLOW_OPER_PASS)) {
-                return sysUserService.getLeader(username, validSuperLeader);
+//                return sysUserService.getLeader(username, validSuperLeader);
+                return null;
             }
             if (entityList == null && operType.equals(FlowConstants.FLOW_OPER_TRANSFER)) {
                 return platApproveUser;
@@ -77,27 +78,28 @@ public class TaskAssgineeService {
                     nextUser = platApproveUser;
                     break;
                 case FlowConstants.LEADER:
-                    nextUser = sysUserService.getLeader(username, validSuperLeader);
+//                    nextUser = sysUserService.getLeader(username, validSuperLeader);
+                    nextUser = null;
                     break;
                 case FlowConstants.RESOURCE_OWNER:
                     nextUser = owner;
                     break;
                 case FlowConstants.ORDER_HPC_MANAGER:
-                    nextUser = getOrderHpcPartitionManagers(serviceId);
+//                    nextUser = getOrderHpcPartitionManagers(serviceId);
+                    nextUser = null;
                     break;
                 case FlowConstants.ORDER_HPC_CLUSTER_MANAGER:
-                    nextUser = getOrderHpcClusterManagers(serviceType);
+//                    nextUser = getOrderHpcClusterManagers(serviceType);
+                    nextUser = null;
                     break;
                 default:
                     // 默认寻找对应的系统角色信息
-                    nextUser = getSystemUserRole(assignee);
+//                    nextUser = getSystemUserRole(assignee);
+                    nextUser = null;
                     break;
             }
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            nextUser = platApproveUser;
         }
         if (StringUtils.isBlank(nextUser)) {
             log.error("未找到审批人");

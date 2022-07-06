@@ -2,7 +2,6 @@ package com.wustzdy.springboot.flowable.demo.service.impl;
 
 
 import cn.hutool.core.collection.CollectionUtil;
-import com.wustzdy.springboot.flowable.demo.cmd.WithdrawTaskCmd;
 import com.wustzdy.springboot.flowable.demo.service.IActivitiUtilSvc;
 import com.wustzdy.springboot.flowable.demo.service.ICommonSvc;
 import com.wustzdy.springboot.flowable.demo.util.BaseUtils;
@@ -315,18 +314,7 @@ public class ActivitiUtilSvcImpl implements IActivitiUtilSvc {
     }
 
 
-    /**
-     * 自己取回流程
-     */
-    @Override
-    public void callBackProcess(String historyTaskId) {
-        String historicActivityInstanceId = iCommonSvc.getTranslate("select id_ from ACT_HI_ACTINST where task_id_='" + historyTaskId + "'");
-        Command<List<String>> cmd = new WithdrawTaskCmd(historyTaskId, historicActivityInstanceId);
-        List<String> historyNodeIds = ProcessEngines.getDefaultProcessEngine().getManagementService().executeCommand(cmd);
-        for (String id : historyNodeIds) {
-            iCommonSvc.executeUpdateSql("delete from ACT_HI_ACTINST where id_='" + id + "'");
-        }
-    }
+
 
     /**
      * 清空指定活动节点流向
@@ -335,7 +323,7 @@ public class ActivitiUtilSvcImpl implements IActivitiUtilSvc {
      * <p>
      * 节点流向集合
      */
-    private List<PvmTransition> clearTransition(ActivityImpl activityImpl) {
+   /* private List<PvmTransition> clearTransition(ActivityImpl activityImpl) {
         // 存储当前节点所有流向临时变量
         // 获取当前节点所有流向，存储到临时变量，然后清空
         List<PvmTransition> pvmTransitionList = activityImpl.getOutgoingTransitions();
@@ -343,7 +331,7 @@ public class ActivitiUtilSvcImpl implements IActivitiUtilSvc {
         pvmTransitionList.clear();
 
         return oriPvmTransitionList;
-    }
+    }*/
 
 
     /**
@@ -353,13 +341,13 @@ public class ActivitiUtilSvcImpl implements IActivitiUtilSvc {
      *
      * @param oriPvmTransitionList 原有节点流向集合
      */
-    private void restoreTransition(ActivityImpl activityImpl, List<PvmTransition> oriPvmTransitionList) {
+  /*  private void restoreTransition(ActivityImpl activityImpl, List<PvmTransition> oriPvmTransitionList) {
         // 清空现有流向
         List<PvmTransition> pvmTransitionList = activityImpl.getOutgoingTransitions();
         pvmTransitionList.clear();
         // 还原以前流向
         pvmTransitionList.addAll(oriPvmTransitionList);
-    }
+    }*/
 
     /**
      * 流程转向操作
@@ -370,24 +358,24 @@ public class ActivitiUtilSvcImpl implements IActivitiUtilSvc {
      */
     private void turnTransition(String taskId, String activityId, Map<String, Object> variables) {
         // 当前节点
-        ActivityImpl currActivity = findActivitiImpl(taskId, null);
+//        ActivityImpl currActivity = findActivitiImpl(taskId, null);
         // 清空当前流向
-        List<PvmTransition> oriPvmTransitionList = clearTransition(currActivity);
+//        List<PvmTransition> oriPvmTransitionList = clearTransition(currActivity);
 
         // 创建新流向
-        TransitionImpl newTransition = currActivity.createOutgoingTransition();
+//        TransitionImpl newTransition = currActivity.createOutgoingTransition();
         // 目标节点
-        ActivityImpl pointActivity = findActivitiImpl(taskId, activityId);
+//        ActivityImpl pointActivity = findActivitiImpl(taskId, activityId);
         // 设置新流向的目标节点
-        newTransition.setDestination(pointActivity);
+//        newTransition.setDestination(pointActivity);
 
         // 执行转向任务
-        taskService.complete(taskId, variables);
+//        taskService.complete(taskId, variables);
         // 删除目标节点新流入
-        pointActivity.getIncomingTransitions().remove(newTransition);
+//        pointActivity.getIncomingTransitions().remove(newTransition);
 
         // 还原以前流向
-        restoreTransition(currActivity, oriPvmTransitionList);
+//        restoreTransition(currActivity, oriPvmTransitionList);
     }
     /*****************************以上为流程转向操作核心逻辑*****************************/
 
@@ -915,34 +903,6 @@ public class ActivitiUtilSvcImpl implements IActivitiUtilSvc {
      *                   如果为null或""，则默认查询当前活动节点
      *                   如果为"end"，则查询结束节点
      */
-    @Override
-    public ActivityImpl findActivitiImpl(String taskId, String activityId) {
-        // 取得流程定义
-        ProcessDefinitionEntity processDefinition = findProcessDefinitionEntityByTaskId(taskId);
-        processDefinition.
-                FlowableActivityEventImpl
-        processDefinition.get
-
-        // 获取当前活动节点ID
-        if (BaseUtils.isEmpty(activityId)) {
-            activityId = getActivityIdByTaskId(taskId);
-        }
-
-        // 根据流程定义，获取该流程实例的结束节点
-        if (END.equals(activityId.toUpperCase())) {
-            for (ActivityImpl activityImpl : processDefinition.getActivities()) {
-                List<PvmTransition> pvmTransitionList = activityImpl.getOutgoingTransitions();
-                if (pvmTransitionList.isEmpty()) {
-                    return activityImpl;
-                }
-            }
-        }
-
-        // 根据节点ID，获取对应的活动节点
-        ActivityImpl activityImpl = processDefinition.findActivity(activityId);
-
-        return activityImpl;
-    }
 
     @Override
     public String getActivityIdByTaskId(String taskId) {
@@ -1020,24 +980,6 @@ public class ActivitiUtilSvcImpl implements IActivitiUtilSvc {
         }
 
         return processDefinition;
-    }
-
-    /**
-     * 根据流程key获取最新版本的流程图
-     */
-    @Override
-    public InputStream getFlowImageByKey(String flowKey) {
-        ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery().processDefinitionKey(flowKey).latestVersion()
-                .singleResult();
-        BpmnModel bpmnModel = repositoryService.getBpmnModel(processDefinition.getId());
-        // 不使用spring请使用下面的两行代码
-        ProcessEngineImpl defaultProcessEngine = (ProcessEngineImpl) ProcessEngines.getDefaultProcessEngine();
-        Context.setProcessEngineConfiguration(defaultProcessEngine.getProcessEngineConfiguration());
-
-        // 使用spring注入引擎请使用下面的这行代码
-        // Context.setProcessEngineConfiguration(processEngine.getProcessEngineConfiguration());
-        DefaultProcessDiagramGenerator defaultProcessDiagramGenerator = new DefaultProcessDiagramGenerator();
-        return defaultProcessDiagramGenerator.generatePngDiagram(bpmnModel);
     }
 
     /**
@@ -1203,10 +1145,10 @@ public class ActivitiUtilSvcImpl implements IActivitiUtilSvc {
                 }
             }
 
-            setPosition(activity, activityInfo);
+//            setPosition(activity, activityInfo);
 
             // 节点信息
-            packageSingleActivitiInfo(activity, activityInfo);
+//            packageSingleActivitiInfo(activity, activityInfo);
 
             activityInfos.add(activityInfo);
         }
@@ -1228,7 +1170,7 @@ public class ActivitiUtilSvcImpl implements IActivitiUtilSvc {
     /**
      * 封装输出信息，包括：当前节点的X、Y坐标、变量信息、任务类型、任务描述
      */
-    private Map<String, Object> packageSingleActivitiInfo(ActivityImpl activity, Map<String, Object> activityInfo) {
+    /*private Map<String, Object> packageSingleActivitiInfo(ActivityImpl activity, Map<String, Object> activityInfo) {
 
         // 坐标信息
         setWidthAndHeight(activity, activityInfo);
@@ -1240,23 +1182,23 @@ public class ActivitiUtilSvcImpl implements IActivitiUtilSvc {
         log.debug("activityBehavior={}", activityBehavior);
 
         return activityInfo;
-    }
+    }*/
 
     /**
      * 设置宽度、高度属性
      */
-    private void setWidthAndHeight(ActivityImpl activity, Map<String, Object> activityInfo) {
+  /*  private void setWidthAndHeight(ActivityImpl activity, Map<String, Object> activityInfo) {
         activityInfo.put("width", activity.getWidth());
         activityInfo.put("height", activity.getHeight());
-    }
+    }*/
 
     /**
      * 设置坐标位置
      */
-    private void setPosition(ActivityImpl activity, Map<String, Object> activityInfo) {
+    /*private void setPosition(ActivityImpl activity, Map<String, Object> activityInfo) {
         activityInfo.put("x", activity.getX());
         activityInfo.put("y", activity.getY());
-    }
+    }*/
 
     /**
      * 获取当前运行时的人员关系表

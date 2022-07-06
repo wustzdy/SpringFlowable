@@ -13,8 +13,6 @@ public interface IHandlerTaskSvc {
 
     ResultVo doPassTask(String taskId, String comment, String nextTaskAndStaffIds, String operation, String userName);
 
-    void doCallBackTask(String taskId);
-
     ResultVo doTransferTask(String taskId, String assignee, String comment, String userName);
 
     void doSuspend(String processInstanceId);
@@ -24,8 +22,6 @@ public interface IHandlerTaskSvc {
     InputStream findImageInputStream(String deploymentId, String imageName);
 
     byte[] findDiagramImageForAcivitiFlowsActiviti(String deploymentId, String imageType);
-
-    InputStream getFlowImageByKey(String flowKey);
 
     List<CommentVo> findCommentByBusinessKey(String businessKey);
 

@@ -8,9 +8,7 @@ import org.flowable.common.engine.impl.interceptor.CommandContext;
 
 import java.io.InputStream;
 
-/**
- * @author xielianjun
- */
+
 public class HistoryProcessInstanceDiagramCmd implements Command<InputStream> {
     protected String historyProcessInstanceId;
 

@@ -3,11 +3,14 @@ package com.wustzdy.springboot.flowable.demo.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.wustzdy.springboot.flowable.demo.dao.BusinessFlowsProxyInstanceDao;
 import com.wustzdy.springboot.flowable.demo.entity.BusinessFlowsProxyInstanceEntity;
 import com.wustzdy.springboot.flowable.demo.entity.BusinessFlowsProxyRecordEntity;
 import com.wustzdy.springboot.flowable.demo.entity.SysTableEntity;
 import com.wustzdy.springboot.flowable.demo.service.BusinessFlowsProxyInstanceService;
 import com.wustzdy.springboot.flowable.demo.service.BusinessFlowsProxyRecordService;
+import com.wustzdy.springboot.flowable.demo.service.SysTableService;
 import com.wustzdy.springboot.flowable.demo.util.PageUtils;
 import com.wustzdy.springboot.flowable.demo.vo.FlowsProxyInfo;
 import lombok.extern.slf4j.Slf4j;
@@ -25,8 +28,8 @@ import java.util.Optional;
 @Slf4j
 @Transactional(rollbackFor = Exception.class)
 @Service("businessFlowsProxyInstanceService")
-public class BusinessFlowsProxyInstanceServicelmpl implements BusinessFlowsProxyInstanceService {
-
+public class BusinessFlowsProxyInstanceServicelmpl extends ServiceImpl<BusinessFlowsProxyInstanceDao,
+        BusinessFlowsProxyInstanceEntity> implements BusinessFlowsProxyInstanceService {
     @Autowired
     private BusinessFlowsProxyRecordService proxyRecordService;
 

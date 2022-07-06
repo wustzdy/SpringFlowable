@@ -4,6 +4,8 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.wustzdy.springboot.flowable.demo.constant.FlowConstants;
+import com.wustzdy.springboot.flowable.demo.dao.BusinessTemplateDao;
+import com.wustzdy.springboot.flowable.demo.dao.PimOrderDao;
 import com.wustzdy.springboot.flowable.demo.entity.BusinessFlowsEntity;
 import com.wustzdy.springboot.flowable.demo.entity.BusinessTemplateEntity;
 import com.wustzdy.springboot.flowable.demo.entity.PimOrderEntity;
@@ -25,6 +27,7 @@ import static com.wustzdy.springboot.flowable.demo.constant.Constant.SEPARATOR_C
 import static com.wustzdy.springboot.flowable.demo.constant.Constant.SEPARATOR_SEMICOLON;
 import static com.wustzdy.springboot.flowable.demo.constant.FlowConstants.*;
 
+@SuppressWarnings("all")
 @Service
 @Slf4j
 public class BasicFlowService {
@@ -44,6 +47,10 @@ public class BasicFlowService {
     private IHandlerTaskSvc iHandlerTaskSvc;
     @Autowired
     private IActivitiUtilSvc iActivitiUtilSvc;
+    @Autowired
+    private PimOrderDao pimOrderDao;
+    @Autowired
+    private BusinessTemplateDao businessTemplateDao;
 
 
     public ResultVo startAndPassProcess(String businessKey, String userName, BusinessFlowsEntity businessFlowsEntity, Map<String, Object> vars) {
@@ -62,7 +69,8 @@ public class BasicFlowService {
         if (templateEntity.getVarTmpl() == null) {
             return doStartProcess(businessKey, templateEntity, userName, businessFlowsEntity);
         } else {
-            return doStartMpProcess(businessKey, templateEntity, userName, businessFlowsEntity, vars);
+//            return doStartMpProcess(businessKey, templateEntity, userName, businessFlowsEntity, vars);
+            return null;
         }
 
     }

@@ -1,6 +1,7 @@
 package com.wustzdy.springboot.flowable.demo.service;
 
 import cn.hutool.core.util.StrUtil;
+import com.wustzdy.springboot.flowable.demo.dao.PimOrderDao;
 import com.wustzdy.springboot.flowable.demo.entity.BusinessFlowsEntity;
 import com.wustzdy.springboot.flowable.demo.entity.PimOrderEntity;
 import com.wustzdy.springboot.flowable.demo.util.OrderUtils;
@@ -22,6 +23,8 @@ public class PimOrderService {
     private OrderUtils orderUtils;
     @Autowired
     private ActTaskService actTaskService;
+    @Autowired
+    private PimOrderDao pimOrderDao;
 
 
     public void startWorkflowAndSave(PimOrderEntity pimOrder, String userName, String orderNum) {

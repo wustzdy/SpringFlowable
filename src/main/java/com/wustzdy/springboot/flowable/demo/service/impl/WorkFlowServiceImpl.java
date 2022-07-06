@@ -8,6 +8,10 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 
 import com.wustzdy.springboot.flowable.demo.cmd.HistoryProcessInstanceDiagramCmd;
 import com.wustzdy.springboot.flowable.demo.constant.FlowConstants;
+import com.wustzdy.springboot.flowable.demo.dao.PimOrderDao;
+import com.wustzdy.springboot.flowable.demo.dao.PimOrderDelayDao;
+import com.wustzdy.springboot.flowable.demo.dao.PimOrderHistoryDao;
+import com.wustzdy.springboot.flowable.demo.dao.PimOrderRecordsDao;
 import com.wustzdy.springboot.flowable.demo.entity.PimOrderEntity;
 import com.wustzdy.springboot.flowable.demo.entity.PimOrderHistoryEntity;
 import com.wustzdy.springboot.flowable.demo.entity.PimOrderRecordsEntity;
@@ -40,7 +44,7 @@ import static com.wustzdy.springboot.flowable.demo.constant.BasicCloudConstants.
 import static com.wustzdy.springboot.flowable.demo.constant.FlowConstants.*;
 
 
-
+@SuppressWarnings("all")
 @Slf4j
 @Transactional(rollbackFor = Exception.class)
 @Service("workFlowService")
@@ -81,10 +85,6 @@ public class WorkFlowServiceImpl implements WorkFlowService {
 
     @Autowired
     private RuntimeService runtimeService;
-
-    @Autowired
-    private BasicFlowService basicFlowService;
-
 
     @Override
     public void passProcess(PassFlowVo passflowVo, String userName, String operation) {
@@ -276,44 +276,6 @@ public class WorkFlowServiceImpl implements WorkFlowService {
         // 已办工单
         doDealOrderProcess(userName, processInstanceId, null);
     }
-
-    @Override
-    public void comment(CommentParamVo commentParamVo, String flowStatProcess) {
-        ResultVo resultVo = iHandlerTaskSvc.addCommentByProcessInstanceId(commentParamVo);
-        if (Objects.isNull(resultVo)) {
-            return;
-        }
-        String processInstanceId = commentParamVo.getProcessInstanceId();
-        PimOrderEntity pimOrderEntity = pimOrderDao.getByProcessInstanceId(processInstanceId);
-        if (pimOrderEntity == null) {
-            return;
-        }
-        pimOrderEntity.setOrderStatus(flowStatProcess);
-        String comment = commentParamVo.getComment();
-        String orderUser = pimOrderEntity.getOrderUser();
-//        String nextStaff = pimOrderEntity.getNextStaff();
-        String currentUser = commentParamVo.getUserName();
-//        String senUser;
-//        if (currentUser.equals(orderUser)) {
-//            senUser = nextStaff;
-//        } else {
-//            senUser = orderUser;
-//        }
-        // 已办工单
-        doDealOrderProcess(currentUser, processInstanceId, comment);
-
-        pimOrderEntity.setCurrentDealUser(currentUser);
-        pimOrderEntity.setUpdateTime(new Date());
-        pimOrderDao.updateById(pimOrderEntity);
-        // 代理记录
-        proxyService.checkAndDoProxy(currentUser, resultVo, "comment");
-        orderUser = actTaskService.filterByWhitelist(orderUser);
-        if (StrUtil.isNotBlank(orderUser)) {
-            // 发送邮件
-            orderUtils.formatMailContent(orderUser, currentUser, comment, pimOrderEntity);
-        }
-    }
-
 
     @Override
     public void comment(CommentParamVo commentParamVo, String flowStatProcess) {

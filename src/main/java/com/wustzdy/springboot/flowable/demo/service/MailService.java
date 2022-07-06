@@ -2,6 +2,7 @@ package com.wustzdy.springboot.flowable.demo.service;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.toolkit.BeanUtils;
+import com.wustzdy.springboot.flowable.demo.dao.SysTableDao;
 import com.wustzdy.springboot.flowable.demo.entity.SysMailEntity;
 import com.wustzdy.springboot.flowable.demo.entity.SysTableEntity;
 import com.wustzdy.springboot.flowable.demo.entity.SysUserEntity;
@@ -20,6 +21,9 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.wustzdy.springboot.flowable.demo.constant.BasicCloudConstants.WORK_ORDER_TYPE_OPERS;
+import static com.wustzdy.springboot.flowable.demo.constant.Constant.SEPARATOR_BLANk;
+import static com.wustzdy.springboot.flowable.demo.constant.Constant.SEPARATOR_COMMA;
+import static com.wustzdy.springboot.flowable.demo.constant.FlowConstants.NO_BODY;
 
 
 @Slf4j
