@@ -314,8 +314,6 @@ public class ActivitiUtilSvcImpl implements IActivitiUtilSvc {
     }
 
 
-
-
     /**
      * 清空指定活动节点流向
      * <p>
@@ -464,7 +462,9 @@ public class ActivitiUtilSvcImpl implements IActivitiUtilSvc {
      */
     @Override
     public List getNextJobs(String procInstanceId, String activityId, String listType) {
-        List list = new ArrayList<>();
+
+        return getNextJobsNew(procInstanceId, activityId, listType);
+       /* List list = new ArrayList<>();
 
         // 流程标示
         String processDefinitionId = historyService.createHistoricProcessInstanceQuery().processInstanceId(procInstanceId).singleResult()
@@ -472,7 +472,6 @@ public class ActivitiUtilSvcImpl implements IActivitiUtilSvc {
 
         ProcessDefinitionEntity def = (ProcessDefinitionEntity) ((RepositoryServiceImpl) repositoryService).getDeployedProcessDefinition(processDefinitionId);
 
-        /*
         // 获得当前任务的所有节点
         List<ActivityImpl> activitiList = def.getActivities();
         for (ActivityImpl activityImpl : activitiList) {
@@ -483,83 +482,51 @@ public class ActivitiUtilSvcImpl implements IActivitiUtilSvc {
                 jumpGateway(list, outTransitions, listType);
             }
         }
-        return list;
-         */
-
-        // taskId:任务ID，approved：任意选择条件
-        Map<String, Object> data = new HashMap<>();
-        data.put("approved", approved);
-        //当前任务信息
-        Task task = taskService.createTaskQuery().processInstanceId(procInstanceId).singleResult();
-
-        //获取流程发布Id信息
-        String definitionId = runtimeService.createProcessInstanceQuery().processInstanceId(procInstanceId).singleResult().getProcessDefinitionId();
-
-        //获取bpm对象
-        BpmnModel bpmnModel = repositoryService.getBpmnModel(definitionId);
-
-        //传节点定义key 获取当前节点
-        FlowNode flowNode = (FlowNode) bpmnModel.getFlowElement(task.getTaskDefinitionKey());
-        // 获取本节点的Id和Name
-        System.out.println("当前节点Id" + flowNode.getId());
-        System.out.println("当前节点名称" + flowNode.getName());
-
-        //输出连线
-        List<SequenceFlow> outgoingFlows = flowNode.getOutgoingFlows();
-
-        //遍历返回下一个节点信息
-        for (SequenceFlow outgoingFlow : outgoingFlows) {
-            //类型自己判断（获取下个节点是网关还是节点）
-            FlowElement targetFlowElement = outgoingFlow.getTargetFlowElement();
-            //下个是节点
-            if (targetFlowElement instanceof UserTask) {
-                // 判断是否是会签
-                UserTask userTask = (UserTask) targetFlowElement;
-                if (userTask.getBehavior() instanceof ParallelMultiInstanceBehavior) {
-                    ParallelMultiInstanceBehavior behavior = (ParallelMultiInstanceBehavior) userTask.getBehavior();
-                    if (behavior != null && behavior.getCollectionExpression() != null) {
-                        System.out.println("当前节点是会签");
-                    }
-                } else {
-                    System.out.println("当前节点不是会签");
-                }
-                if (approvalFlowNodeDto.getBehaviorFlag()) { // 下个节点是会签
-                    // 会签的候选用户Key
-                    String assignees = ((UserTask) targetFlowElement).getAssignee();
-                    log.info("获取会签的id");
-                    String nextCandidateUsers = (((UserTask) targetFlowElement).getLoopCharacteristics().getInputDataItem());
-                    log.info("获取会签的collection，候选人List", nextCandidateUsers);
-                } else { // 下个节点不是会签
-                    String candidateUserses = ((UserTask) targetFlowElement).getCandidateUsers().get(0);
-                    log.info("获取用户节点的candidateUsers，候选人", candidateUserses);
-                    String candidateUsers = candidateUserses.substring(candidateUserses.indexOf("{") + 1, candidateUserses.indexOf("}"));
-                    log.info("查询出的值是${submitUser}，截取获取用户节点的candidateUsers，候选人", candidateUsers);
-                }
-                System.out.println("下一节点: id=" + targetFlowElement.getId() + ",name=" + targetFlowElement.getName())；
-            } else if (targetFlowElement instanceof ExclusiveGateway) {
-                setExclusiveGateway(targetFlowElement);
-            }
-        }
+        return list;*/
 
     }
 
-    private void setExclusiveGateway(FlowElement targetFlow) {
+    private List getNextJobsNew(String procInstanceId, String activityId, String listType) {
+        List list = new ArrayList<>();
+
+        // 流程标示
+        String processDefinitionId = historyService.createHistoricProcessInstanceQuery().processInstanceId(procInstanceId).singleResult()
+                .getProcessDefinitionId();
+
+        BpmnModel bpmnModel = repositoryService.getBpmnModel(processDefinitionId);
+        FlowNode flowNode = (FlowNode) bpmnModel.getFlowElement(activityId);
+        List<SequenceFlow> outFlows = flowNode.getOutgoingFlows();
+        //遍历返回下一个节点信息
+        for (SequenceFlow outgoingFlow : outFlows) {
+            //类型自己判断（获取下个节点是网关还是节点）
+            FlowElement targetFlowElement = outgoingFlow.getTargetFlowElement();
+            //下个是节点
+            if (targetFlowElement.getId().equals(activityId)) {
+                log.info("当前任务：" + targetFlowElement.getName() + "  当前ID：" + targetFlowElement.getId());
+                jumpGatewayNew(list, listType, targetFlowElement);
+            }
+        }
+        return list;
+    }
+
+    private void jumpGatewayNew(List list, String listType, FlowElement targetFlow) {
         //排他网关，获取连线信息
         List<SequenceFlow> targetFlows = ((ExclusiveGateway) targetFlow).getOutgoingFlows();
         for (SequenceFlow sequenceFlow : targetFlows) {
             //目标节点信息
             FlowElement targetFlowElement = sequenceFlow.getTargetFlowElement();
-            if (targetFlowElement instanceof UserTask) {
-                // do something
-            } else if (targetFlowElement instanceof EndEvent) {
-                // do something
-            } else if (targetFlowElement instanceof ServiceTask) {
-                // do something
-            } else if (targetFlowElement instanceof ExclusiveGateway) {
-                //递归寻找
-                setExclusiveGateway(targetFlowElement);
-            } else if (targetFlowElement instanceof SubProcess) {
-                // do something
+
+            if (targetFlowElement instanceof ExclusiveGateway) {
+                jumpGatewayNew(list, listType, targetFlowElement);
+            } else {
+                if ("map".equals(listType.toLowerCase())) {
+                    Map map = new HashMap();
+                    map.put("id", sequenceFlow.getId());
+                    map.put("name", sequenceFlow.getName());
+                    list.add(map);
+                } else if ("string".equals(listType.toLowerCase())) {
+                    list.add(sequenceFlow.getId());
+                }
             }
         }
     }
@@ -570,7 +537,7 @@ public class ActivitiUtilSvcImpl implements IActivitiUtilSvc {
      * @param flowElement
      * @param data
      */
-    private void setExclusiveGateway(FlowElement flowElement, Map data) {
+    /*private void setExclusiveGateway(FlowElement flowElement, Map data) {
         // 获取所有网关分支
         List<SequenceFlow> targetFlows = ((ExclusiveGateway) flowElement).getOutgoingFlows();
         // 循环每个网关分支
@@ -625,12 +592,12 @@ public class ActivitiUtilSvcImpl implements IActivitiUtilSvc {
                 System.out.println("排他网关的下一节点是SubProcess: 内部子流程");
             }
         }
-    }
+    }*/
 
     /**
      * 递归跳过网关节点，直到取到非网关节点为止
      */
-    private void jumpGateway(List list, List<PvmTransition> outTransitions, String listType) {
+    /*private void jumpGateway(List list, List<PvmTransition> outTransitions, String listType) {
         for (PvmTransition tr : outTransitions) {
             //获取线路的下一节点
             PvmActivity ac = tr.getDestination();
@@ -649,7 +616,7 @@ public class ActivitiUtilSvcImpl implements IActivitiUtilSvc {
                 }
             }
         }
-    }
+    }*/
 
     /**
      * 获取下一节点类型，如果是结束网关，就再获取下一节点
@@ -659,7 +626,7 @@ public class ActivitiUtilSvcImpl implements IActivitiUtilSvc {
     @Override
     public String getNextType(String procInstanceId, String activityId) {
 
-        getNextTypeNew(procInstanceId, activityId);
+        return getNextTypeNew(procInstanceId, activityId);
         String resultType = "";
 
         // 流程标示
@@ -1241,6 +1208,84 @@ public class ActivitiUtilSvcImpl implements IActivitiUtilSvc {
             // 添加组任务
             transferProcess(taskId, null);
             addCandidateUser(taskId, newAssignees);
+        }
+    }
+
+    public List getNextJobs01(String procInstanceId, String activityId, String listType) {
+        // taskId:任务ID，approved：任意选择条件
+        Map<String, Object> data = new HashMap<>();
+        data.put("approved", approved);
+        //当前任务信息
+        Task task = taskService.createTaskQuery().processInstanceId(procInstanceId).singleResult();
+
+        //获取流程发布Id信息
+        String definitionId = runtimeService.createProcessInstanceQuery().processInstanceId(procInstanceId).singleResult().getProcessDefinitionId();
+
+        //获取bpm对象
+        BpmnModel bpmnModel = repositoryService.getBpmnModel(definitionId);
+
+        //传节点定义key 获取当前节点
+        FlowNode flowNode = (FlowNode) bpmnModel.getFlowElement(task.getTaskDefinitionKey());
+        // 获取本节点的Id和Name
+        System.out.println("当前节点Id" + flowNode.getId());
+        System.out.println("当前节点名称" + flowNode.getName());
+
+        //输出连线
+        List<SequenceFlow> outgoingFlows = flowNode.getOutgoingFlows();
+
+        //遍历返回下一个节点信息
+        for (SequenceFlow outgoingFlow : outgoingFlows) {
+            //类型自己判断（获取下个节点是网关还是节点）
+            FlowElement targetFlowElement = outgoingFlow.getTargetFlowElement();
+            //下个是节点
+            if (targetFlowElement instanceof UserTask) {
+                // 判断是否是会签
+                UserTask userTask = (UserTask) targetFlowElement;
+                if (userTask.getBehavior() instanceof ParallelMultiInstanceBehavior) {
+                    ParallelMultiInstanceBehavior behavior = (ParallelMultiInstanceBehavior) userTask.getBehavior();
+                    if (behavior != null && behavior.getCollectionExpression() != null) {
+                        System.out.println("当前节点是会签");
+                    }
+                } else {
+                    System.out.println("当前节点不是会签");
+                }
+                if (approvalFlowNodeDto.getBehaviorFlag()) { // 下个节点是会签
+                    // 会签的候选用户Key
+                    String assignees = ((UserTask) targetFlowElement).getAssignee();
+                    log.info("获取会签的id");
+                    String nextCandidateUsers = (((UserTask) targetFlowElement).getLoopCharacteristics().getInputDataItem());
+                    log.info("获取会签的collection，候选人List", nextCandidateUsers);
+                } else { // 下个节点不是会签
+                    String candidateUserses = ((UserTask) targetFlowElement).getCandidateUsers().get(0);
+                    log.info("获取用户节点的candidateUsers，候选人", candidateUserses);
+                    String candidateUsers = candidateUserses.substring(candidateUserses.indexOf("{") + 1, candidateUserses.indexOf("}"));
+                    log.info("查询出的值是${submitUser}，截取获取用户节点的candidateUsers，候选人", candidateUsers);
+                }
+                System.out.println("下一节点: id=" + targetFlowElement.getId() + ",name=" + targetFlowElement.getName())；
+            } else if (targetFlowElement instanceof ExclusiveGateway) {
+                setExclusiveGateway01(targetFlowElement);
+            }
+        }
+    }
+
+    private void setExclusiveGateway01(FlowElement targetFlow) {
+        //排他网关，获取连线信息
+        List<SequenceFlow> targetFlows = ((ExclusiveGateway) targetFlow).getOutgoingFlows();
+        for (SequenceFlow sequenceFlow : targetFlows) {
+            //目标节点信息
+            FlowElement targetFlowElement = sequenceFlow.getTargetFlowElement();
+            if (targetFlowElement instanceof UserTask) {
+                // do something
+            } else if (targetFlowElement instanceof EndEvent) {
+                // do something
+            } else if (targetFlowElement instanceof ServiceTask) {
+                // do something
+            } else if (targetFlowElement instanceof ExclusiveGateway) {
+                //递归寻找
+                setExclusiveGateway(targetFlowElement);
+            } else if (targetFlowElement instanceof SubProcess) {
+                // do something
+            }
         }
     }
 }
