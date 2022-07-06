@@ -1,9 +1,7 @@
 package com.wustzdy.springboot.flowable.demo.controller;
 
 import com.wustzdy.springboot.flowable.demo.demo.BusinessAssignModel;
-import com.wustzdy.springboot.flowable.demo.demo.BusinessTemplateModel;
-import com.wustzdy.springboot.flowable.demo.service.BusinessAssignService;
-import com.wustzdy.springboot.flowable.demo.service.BusinessTemplateService;
+import com.wustzdy.springboot.flowable.demo.service.BusinessAssigneeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/business")
 public class BusinessAssignController {
     @Autowired
-    private BusinessAssignService service;
+    private BusinessAssigneeService service;
 
     @PostMapping("/assign")
     public BusinessAssignModel addTemplate(@RequestBody BusinessAssignModel model) {

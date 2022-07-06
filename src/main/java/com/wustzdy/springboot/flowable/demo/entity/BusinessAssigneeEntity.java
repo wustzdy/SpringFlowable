@@ -13,8 +13,8 @@ import java.util.Date;
 @Data
 @Accessors(chain = true)
 @ToString(callSuper = true)
-@TableName(BusinessAssignEntity.TABLE_NAME)
-public class BusinessAssignEntity {
+@TableName(BusinessAssigneeEntity.TABLE_NAME)
+public class BusinessAssigneeEntity {
     public static final String TABLE_NAME = "business_assignee";
 
     @TableId(type = IdType.ASSIGN_ID)
